@@ -16,9 +16,9 @@ namespace eShiftManagementSystem.Models
 
         // Computed properties
         public string DisplayName => !string.IsNullOrEmpty(Username) ? Username : Email;
-        public bool IsAdmin => Role?.ToLower() == "admin";
-        public bool IsCustomer => Role?.ToLower() == "customer";
-        public bool IsDriver => Role?.ToLower() == "driver";
-        public bool IsStaff => Role?.ToLower() == "staff" || IsAdmin;
+        public bool IsAdmin => string.Equals(Role, "admin", StringComparison.OrdinalIgnoreCase);
+        public bool IsCustomer => string.Equals(Role, "customer", StringComparison.OrdinalIgnoreCase);
+        public bool IsDriver => string.Equals(Role, "driver", StringComparison.OrdinalIgnoreCase);
+        public bool IsStaff => string.Equals(Role, "staff", StringComparison.OrdinalIgnoreCase) || IsAdmin;
     }
 }

@@ -19,8 +19,8 @@ namespace eShiftManagementSystem.Models
 
         // Computed properties
         public bool IsExpired => DateTime.Now > ValidUntil;
-        public bool IsAccepted => Status.ToLower() == "accepted";
-        public bool IsPending => Status.ToLower() == "pending";
-        public bool IsDeclined => Status.ToLower() == "declined";
+        public bool IsAccepted => string.Equals(Status, "accepted", StringComparison.OrdinalIgnoreCase);
+        public bool IsPending => string.Equals(Status, "pending", StringComparison.OrdinalIgnoreCase);
+        public bool IsDeclined => string.Equals(Status, "declined", StringComparison.OrdinalIgnoreCase);
     }
 }

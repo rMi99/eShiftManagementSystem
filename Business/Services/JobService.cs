@@ -154,7 +154,7 @@ namespace eShiftManagementSystem.Business.Services
 
         public string GenerateJobNumber()
         {
-            return $"JOB{DateTime.Now:yyyyMMdd}{DateTime.Now.Millisecond:000}";
+            return NumberGenerator.GenerateJobNumber();
         }
     }
 }

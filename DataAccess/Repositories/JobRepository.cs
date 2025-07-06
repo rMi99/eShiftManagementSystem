@@ -401,6 +401,7 @@ namespace eShiftManagementSystem.DataAccess.Repositories
 
         public int AddJob(Job job)
         {
+            ArgumentNullException.ThrowIfNull(job);
             using (var connection = DatabaseConnection.GetConnection())
             {
                 try
@@ -447,6 +448,7 @@ namespace eShiftManagementSystem.DataAccess.Repositories
 
         public void UpdateJob(Job job)
         {
+            ArgumentNullException.ThrowIfNull(job);
             using (var connection = DatabaseConnection.GetConnection())
             {
                 try
@@ -681,6 +683,11 @@ namespace eShiftManagementSystem.DataAccess.Repositories
                 }
             }
             return jobs;
+        }
+
+        public List<Job> GetJobsByDriverId(int driverId)
+        {
+            return GetJobsForDriver(driverId);
         }
 
         public void AssignJobToDriver(int jobId, int driverId)

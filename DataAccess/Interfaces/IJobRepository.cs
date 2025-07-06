@@ -20,6 +20,7 @@ namespace eShiftManagementSystem.DataAccess.Interfaces
         int GetJobCountByStatus(string status);
         List<Job> GetRecentJobs(int count);
         List<Job> GetJobsForDriver(int driverId);
+        List<Job> GetJobsByDriverId(int driverId);  // Alias for GetJobsForDriver
         void AssignJobToDriver(int jobId, int driverId);
         void UpdateJobProgress(int jobId, string progress);
     }

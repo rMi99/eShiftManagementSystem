@@ -441,7 +441,7 @@ namespace eShiftManagementSystem.Business.Services
             {
                 // Check if user exists and is active
                 var user = _userRepository.GetUserById(userId);
-                if (user == null || !user.IsActive)
+                if (user is null || !user.IsActive)
                     return false;
 
                 // Check if there's a current session and it matches the userId

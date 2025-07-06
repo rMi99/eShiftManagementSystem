@@ -15,10 +15,10 @@ namespace eShiftManagementSystem.Utils
         {
             get
             {
-                if (_configuration == null)
+                if (_configuration is null)
                 {
                     // Try to get from Program first
-                    if (Program.Configuration != null)
+                    if (Program.Configuration is not null)
                     {
                         _configuration = Program.Configuration;
                     }

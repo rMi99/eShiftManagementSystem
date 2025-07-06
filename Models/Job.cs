@@ -22,6 +22,11 @@ namespace eShiftManagementSystem.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
 
+        // New required properties per problem statement
+        public string Priority { get; set; } = "normal";
+        public string CustomerName { get; set; } = string.Empty;
+        public int? DriverId { get; set; }
+
         // Navigation property
         public Customer? Customer { get; set; }
     }

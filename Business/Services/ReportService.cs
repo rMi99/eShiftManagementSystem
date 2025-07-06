@@ -85,7 +85,7 @@ namespace eShiftManagementSystem.Business.Services
             try
             {
                 var customer = _customerRepository.GetCustomerById(customerId);
-                if (customer == null)
+                if (customer is null)
                 {
                     throw new ArgumentException("Customer not found.");
                 }
