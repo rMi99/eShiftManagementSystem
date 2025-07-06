@@ -2,6 +2,9 @@ using System;
 
 namespace eShiftManagementSystem.Models
 {
+    /// <summary>
+    /// Represents a driver in the e-Shift Management System
+    /// </summary>
     public class Driver
     {
         public int DriverId { get; set; }

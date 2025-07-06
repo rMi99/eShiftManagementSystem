@@ -1,25 +1,23 @@
 using eShiftManagementSystem.Models;
-using System;
 using System.Collections.Generic;
 
-namespace eShiftManagementSystem.DataAccess.Interfaces
+namespace eShiftManagementSystem.Business.Interfaces
 {
     /// <summary>
-    /// Interface for driver data access operations
+    /// Interface for driver business operations
     /// </summary>
-    public interface IDriverRepository
+    public interface IDriverService
     {
         Driver? GetDriverById(int driverId);
         Driver? GetDriverByUserId(int userId);
         List<Driver> GetAllDrivers();
-        List<Driver> GetActiveDrivers();
+        List<Driver> GetAvailableDrivers();
         List<Driver> GetDriversByStatus(string status);
         int AddDriver(Driver driver);
         void UpdateDriver(Driver driver);
         void UpdateDriverStatus(int driverId, string status);
-        void DeleteDriver(int driverId);
-        bool DriverExists(int driverId);
-        bool IsDriverAvailable(int driverId);
         void AssignVehicleToDriver(int driverId, string vehicleAssignment);
+        bool IsDriverAvailable(int driverId);
+        void DeactivateDriver(int driverId);
     }
 }
