@@ -1,4 +1,5 @@
 using System;
+using eShiftManagementSystem.Utils;
 
 namespace eShiftManagementSystem.Models
 {
@@ -15,9 +16,9 @@ namespace eShiftManagementSystem.Models
         public string Address { get; set; } = string.Empty;
         public string LicenseNumber { get; set; } = string.Empty;
         public DateTime LicenseExpiryDate { get; set; }
-        public DateTime HireDate { get; set; } = DateTime.Now.Date;
+        public DateTime HireDate { get; set; } = DateTimeHelper.Today;
         public bool IsActive { get; set; } = true;
-        public string Status { get; set; } = "available"; // available, on_job, unavailable
+        public string Status { get; set; } = Constants.DriverStatus.Available; // available, on_job, unavailable
         public string VehicleAssignment { get; set; } = string.Empty;
 
         // Navigation property

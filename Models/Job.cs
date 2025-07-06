@@ -1,4 +1,5 @@
 ﻿using System;
+using eShiftManagementSystem.Utils;
 
 namespace eShiftManagementSystem.Models
 {
@@ -13,17 +14,17 @@ namespace eShiftManagementSystem.Models
         public string DestinationAddress { get; set; } = string.Empty;
         public string DestinationCity { get; set; } = string.Empty;
         public string DestinationPostalCode { get; set; } = string.Empty;
-        public DateTime RequestedPickupDate { get; set; } = DateTime.Now.Date;
+        public DateTime RequestedPickupDate { get; set; } = DateTimeHelper.Today;
         public DateTime? RequestedDeliveryDate { get; set; }
-        public string Status { get; set; } = "pending";
+        public string Status { get; set; } = Constants.JobStatus.Pending;
         public decimal? TotalEstimatedWeight { get; set; }
         public decimal? TotalEstimatedVolume { get; set; }
         public string SpecialInstructions { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
-        public DateTime UpdatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTimeHelper.Now;
+        public DateTime UpdatedAt { get; set; } = DateTimeHelper.Now;
 
         // New required properties per problem statement
-        public string Priority { get; set; } = "normal";
+        public string Priority { get; set; } = Constants.JobPriority.Normal;
         public string CustomerName { get; set; } = string.Empty;
         public int? DriverId { get; set; }
 

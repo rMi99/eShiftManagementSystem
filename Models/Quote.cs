@@ -1,4 +1,5 @@
 ﻿using System;
+using eShiftManagementSystem.Utils;
 
 namespace eShiftManagementSystem.Models
 {
@@ -10,17 +11,17 @@ namespace eShiftManagementSystem.Models
         public decimal EstimatedCost { get; set; }
         public string Description { get; set; } = string.Empty;
         public DateTime ValidUntil { get; set; }
-        public string Status { get; set; } = "pending";
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
-        public DateTime UpdatedAt { get; set; } = DateTime.Now;
+        public string Status { get; set; } = Constants.QuoteStatus.Pending;
+        public DateTime CreatedAt { get; set; } = DateTimeHelper.Now;
+        public DateTime UpdatedAt { get; set; } = DateTimeHelper.Now;
 
         // Navigation property
         public Customer? Customer { get; set; }
 
         // Computed properties
         public bool IsExpired => DateTime.Now > ValidUntil;
-        public bool IsAccepted => string.Equals(Status, "accepted", StringComparison.OrdinalIgnoreCase);
-        public bool IsPending => string.Equals(Status, "pending", StringComparison.OrdinalIgnoreCase);
-        public bool IsDeclined => string.Equals(Status, "declined", StringComparison.OrdinalIgnoreCase);
+        public bool IsAccepted => string.Equals(Status, Constants.QuoteStatus.Accepted, StringComparison.OrdinalIgnoreCase);
+        public bool IsPending => string.Equals(Status, Constants.QuoteStatus.Pending, StringComparison.OrdinalIgnoreCase);
+        public bool IsDeclined => string.Equals(Status, Constants.QuoteStatus.Declined, StringComparison.OrdinalIgnoreCase);
     }
 }
