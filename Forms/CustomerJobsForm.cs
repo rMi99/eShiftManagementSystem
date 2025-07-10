@@ -165,9 +165,9 @@ namespace eShiftManagementSystem.Forms
             if (dgvJobs.SelectedRows.Count > 0)
             {
                 var selectedRow = dgvJobs.SelectedRows[0];
-                var jobId = Convert.ToInt32(selectedRow.Cells["JobId"].Value);
+                var JobNumber = selectedRow.Cells["JobNumber"].Value;
                 
-                MaterialMessageBox.Show($"Job details view will be implemented for Job ID: {jobId}", "Information", 
+                MaterialMessageBox.Show($"Job details view will be implemented for Job ID: {JobNumber}", "Information", 
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             else
