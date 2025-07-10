@@ -243,7 +243,7 @@ namespace eShiftManagementSystem.Forms
                 Depth = 0,
                 MouseState = MaterialSkin.MouseState.OUT
             };
-            cmbCountry.Items.AddRange(new object[] { "UK", "USA", "Canada", "Australia", "Germany", "France" });
+            cmbCountry.Items.AddRange(new object[] { "Sri Lanka", "USA", "Canada", "Australia", "Germany", "France" });
             cmbCountry.SelectedIndex = 0;
 
             // Action buttons
@@ -489,7 +489,7 @@ namespace eShiftManagementSystem.Forms
                         Address = txtAddress.Text.Trim(),
                         City = txtCity.Text.Trim(),
                         PostalCode = txtPostalCode.Text.Trim(),
-                        Country = cmbCountry.SelectedItem?.ToString() ?? "UK",
+                        Country = cmbCountry.SelectedItem?.ToString() ?? "Sri Lanka",
                         RegistrationDate = DateTime.Now.Date
                     };
 
@@ -506,7 +506,7 @@ namespace eShiftManagementSystem.Forms
                     _selectedCustomer.Address = txtAddress.Text.Trim();
                     _selectedCustomer.City = txtCity.Text.Trim();
                     _selectedCustomer.PostalCode = txtPostalCode.Text.Trim();
-                    _selectedCustomer.Country = cmbCountry.SelectedItem?.ToString() ?? "UK";
+                    _selectedCustomer.Country = cmbCountry.SelectedItem?.ToString() ?? "Sri Lanka";
 
                     _customerRepository.UpdateCustomer(_selectedCustomer);
 
