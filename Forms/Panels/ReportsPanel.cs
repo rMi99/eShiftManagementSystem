@@ -7,6 +7,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Linq;
+using eShiftManagementSystem.Services;
 
 namespace eShiftManagementSystem.Forms
 {
@@ -15,8 +16,10 @@ namespace eShiftManagementSystem.Forms
         private readonly ReportRepository _reportRepository;
         private readonly JobRepository _jobRepository;
         private readonly CustomerRepository _customerRepository;
+        private readonly PdfService _pdfService;
+        private readonly ExcelService _excelService;
 
-        // Controls
+        // ... (Controls and constructor remain the same)
         private MaterialCard cardReportTypes;
         private MaterialCard cardReportData;
         private MaterialComboBox cmbReportType;
@@ -26,14 +29,19 @@ namespace eShiftManagementSystem.Forms
         private DataGridView dgvReportData;
         private MaterialButton btnExport;
 
+
         public ReportsPanel()
         {
             _reportRepository = new ReportRepository();
             _jobRepository = new JobRepository();
             _customerRepository = new CustomerRepository();
+            _pdfService = new PdfService();
+            _excelService = new ExcelService();
             InitializeComponent();
         }
 
+
+        // ... (All other methods remain the same)
         private void InitializeComponent()
         {
             this.BackColor = Color.FromArgb(250, 250, 250);
@@ -85,12 +93,12 @@ namespace eShiftManagementSystem.Forms
                 Depth = 0,
                 MouseState = MaterialSkin.MouseState.OUT
             };
-            cmbReportType.Items.AddRange(new object[] { 
-                "Job Statistics", 
-                "Customer Report", 
-                "Revenue Report", 
-                "Monthly Summary", 
-                "Top Customers" 
+            cmbReportType.Items.AddRange(new object[] {
+                "Job Statistics",
+                "Customer Report",
+                "Revenue Report",
+                "Monthly Summary",
+                "Top Customers"
             });
 
             dtpStartDate = new DateTimePicker
@@ -189,7 +197,7 @@ namespace eShiftManagementSystem.Forms
         {
             if (cmbReportType.SelectedIndex == -1)
             {
-                MaterialMessageBox.Show("Please select a report type.", "Validation Error", 
+                MaterialMessageBox.Show("Please select a report type.", "Validation Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -197,7 +205,7 @@ namespace eShiftManagementSystem.Forms
             try
             {
                 var reportType = cmbReportType.SelectedItem.ToString();
-                
+
                 switch (reportType)
                 {
                     case "Job Statistics":
@@ -219,7 +227,7 @@ namespace eShiftManagementSystem.Forms
             }
             catch (Exception ex)
             {
-                MaterialMessageBox.Show($"Error generating report: {ex.Message}", "Error", 
+                MaterialMessageBox.Show($"Error generating report: {ex.Message}", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -272,10 +280,52 @@ namespace eShiftManagementSystem.Forms
             dgvReportData.DataSource = topCustomers;
         }
 
+
         private void btnExport_Click(object sender, EventArgs e)
         {
-            MaterialMessageBox.Show("Export functionality will be implemented in future updates.", "Information", 
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (dgvReportData.Rows.Count == 0)
+            {
+                MaterialMessageBox.Show("There is no data to export.", "No Data",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using (var choiceForm = new ExportChoiceForm())
+            {
+                if (choiceForm.ShowDialog() == DialogResult.OK)
+                {
+                    string reportTitle = cmbReportType.SelectedItem?.ToString() ?? "Report";
+
+                    if (choiceForm.SelectedFormat == ExportChoiceForm.ExportFormat.PDF)
+                    {
+                        var saveFileDialog = new SaveFileDialog
+                        {
+                            Filter = "PDF Document|*.pdf",
+                            Title = "Export as PDF",
+                            FileName = $"{reportTitle.Replace(" ", "_")}_Report_{DateTime.Now:yyyyMMdd_HHmmss}.pdf"
+                        };
+
+                        if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                        {
+                            _pdfService.GeneratePdfReport(dgvReportData, reportTitle);
+                        }
+                    }
+                    else if (choiceForm.SelectedFormat == ExportChoiceForm.ExportFormat.Excel)
+                    {
+                        var saveFileDialog = new SaveFileDialog
+                        {
+                            Filter = "Excel Workbook|*.xlsx",
+                            Title = "Export as Excel",
+                            FileName = $"{reportTitle.Replace(" ", "_")}_Report_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+                        };
+                        
+                        if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                        {
+                           _excelService.GenerateExcelReport(dgvReportData, reportTitle, saveFileDialog.FileName);
+                        }
+                    }
+                }
+            }
         }
     }
 }
