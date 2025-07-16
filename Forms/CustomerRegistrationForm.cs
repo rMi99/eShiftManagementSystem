@@ -68,7 +68,7 @@ namespace eShiftManagementSystem.Forms
             // Create title label
             var lblTitle = new MaterialLabel
             {
-                Text = "Customer Registration",
+                Text = "",
                 Location = new Point(50, 30),
                 AutoSize = true,
                 Depth = 0,
@@ -231,65 +231,88 @@ namespace eShiftManagementSystem.Forms
             });
         }
 
-        private void btnRegister_Click(object sender, EventArgs e)
+    private void btnRegister_Click(object sender, EventArgs e)
+{
+    // Basic required field validation
+    if (string.IsNullOrWhiteSpace(txtUsername.Text) ||
+        string.IsNullOrWhiteSpace(txtEmail.Text) ||
+        string.IsNullOrWhiteSpace(txtPassword.Text) ||
+        string.IsNullOrWhiteSpace(txtConfirmPassword.Text) ||
+        string.IsNullOrWhiteSpace(txtFirstName.Text) ||
+        string.IsNullOrWhiteSpace(txtLastName.Text) ||
+        string.IsNullOrWhiteSpace(txtPhone.Text))
+    {
+        MaterialMessageBox.Show("Please fill in all required fields.", "Validation Error",
+            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        return;
+    }
+
+    // Email validation
+    if (!ValidationUtils.IsValidEmail(txtEmail.Text))
+    {
+        MaterialMessageBox.Show("Please enter a valid email address.", "Validation Error",
+            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        return;
+    }
+
+    // Phone number validation
+    if (!ValidationUtils.IsValidPhoneNumber(txtPhone.Text))
+    {
+        MaterialMessageBox.Show("Phone number must contain 10–15 digits.", "Validation Error",
+            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        return;
+    }
+
+    // Password confirmation
+    if (txtPassword.Text != txtConfirmPassword.Text)
+    {
+        MaterialMessageBox.Show("Passwords do not match.", "Validation Error",
+            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        return;
+    }
+
+    // Strong password validation
+    var (isStrong, errorMessage) = ValidationUtils.IsStrongPassword(txtPassword.Text);
+    if (!isStrong)
+    {
+        MaterialMessageBox.Show(errorMessage, "Password Error",
+            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        return;
+    }
+
+    var customer = new Customer
+    {
+        FirstName = txtFirstName.Text.Trim(),
+        LastName = txtLastName.Text.Trim(),
+        Phone = txtPhone.Text.Trim(),
+        Address = txtAddress.Text.Trim(),
+        City = txtCity.Text.Trim(),
+        PostalCode = txtPostalCode.Text.Trim(),
+        Country = cmbCountry.SelectedItem?.ToString() ?? "United Kingdom",
+        RegistrationDate = dtpRegistrationDate.Value.Date
+    };
+
+    try
+    {
+        if (_authService.RegisterCustomer(txtUsername.Text.Trim(), txtEmail.Text.Trim(), txtPassword.Text, customer))
         {
-            if (string.IsNullOrWhiteSpace(txtUsername.Text) ||
-                string.IsNullOrWhiteSpace(txtEmail.Text) ||
-                string.IsNullOrWhiteSpace(txtPassword.Text) ||
-                string.IsNullOrWhiteSpace(txtFirstName.Text) ||
-                string.IsNullOrWhiteSpace(txtLastName.Text))
-            {
-                MaterialMessageBox.Show("Please fill in all required fields.", "Validation Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            if (txtPassword.Text != txtConfirmPassword.Text)
-            {
-                MaterialMessageBox.Show("Passwords do not match.", "Validation Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            if (txtPassword.Text.Length < 6)
-            {
-                MaterialMessageBox.Show("Password must be at least 6 characters long.", "Validation Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            var customer = new Customer
-            {
-                FirstName = txtFirstName.Text.Trim(),
-                LastName = txtLastName.Text.Trim(),
-                Phone = txtPhone.Text.Trim(),
-                Address = txtAddress.Text.Trim(),
-                City = txtCity.Text.Trim(),
-                PostalCode = txtPostalCode.Text.Trim(),
-                Country = cmbCountry.SelectedItem?.ToString() ?? "United Kingdom",
-                RegistrationDate = dtpRegistrationDate.Value.Date
-            };
-
-            try
-            {
-                if (_authService.RegisterCustomer(txtUsername.Text.Trim(), txtEmail.Text.Trim(), txtPassword.Text, customer))
-                {
-                    MaterialMessageBox.Show("Registration successful! You can now login.", "Success",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    this.DialogResult = DialogResult.OK;
-                    this.Close();
-                }
-                else
-                {
-                    MaterialMessageBox.Show("Registration failed. Username or email may already exist.", "Error",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-            catch (Exception ex)
-            {
-                MaterialMessageBox.Show($"Registration error: {ex.Message}", "Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            MaterialMessageBox.Show("Registration successful! You can now login.", "Success",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            this.DialogResult = DialogResult.OK;
+            this.Close();
         }
+        else
+        {
+            MaterialMessageBox.Show("Registration failed. Username or email may already exist.", "Error",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+    catch (Exception ex)
+    {
+        MaterialMessageBox.Show($"Registration error: {ex.Message}", "Error",
+            MessageBoxButtons.OK, MessageBoxIcon.Error);
+    }
+}
+
     }
 }

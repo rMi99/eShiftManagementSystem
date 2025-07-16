@@ -138,7 +138,7 @@ namespace eShiftManagementSystem.Forms
                 Depth = 0,
                 MouseState = MaterialSkin.MouseState.OUT
             };
-            cmbCountry.Items.AddRange(new object[] { "United Kingdom", "United States", "Canada", "Australia", "Ireland" });
+            cmbCountry.Items.AddRange(new object[] { "Sri Lanka", "United Kingdom", "United States", "Canada", "Australia", "Ireland" });
 
             btnSave = new MaterialButton
             {
