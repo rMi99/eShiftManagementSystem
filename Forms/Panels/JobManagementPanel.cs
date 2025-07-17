@@ -1,20 +1,23 @@
 using MaterialSkin;
 using MaterialSkin.Controls;
 using eShiftManagementSystem.Utils;
-using eShiftManagementSystem.DataAccess.Repositories;
 using eShiftManagementSystem.Models;
 using System;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Linq;
 using System.Collections.Generic;
+using eShiftManagementSystem.Business.Services;
+using eShiftManagementSystem.DataAccess.Repositories;
+using eShiftManagementSystem.Services;
+using eShiftManagementSystem.Business.Interfaces;
 
 namespace eShiftManagementSystem.Forms
 {
     public partial class JobManagementPanel : UserControl
     {
-        private readonly JobRepository _jobRepository;
-        private readonly CustomerRepository _customerRepository;
+        private readonly JobService _jobService;
+        private readonly CustomerService _customerService;
         private Job? _selectedJob;
 
         // Controls
@@ -39,12 +42,13 @@ namespace eShiftManagementSystem.Forms
         private MaterialButton btnApprove;
         private MaterialButton btnDecline;
         private MaterialButton btnDelete;
+        private MaterialLabel lblTitle;
         private MaterialButton btnClear;
 
         public JobManagementPanel()
         {
-            _jobRepository = new JobRepository();
-            _customerRepository = new CustomerRepository();
+            _jobService = new JobService(new JobRepository(), new EmailService(Program.Configuration));
+            _customerService = new CustomerService();
             InitializeComponent();
             LoadJobs();
             LoadCustomers();
@@ -52,23 +56,29 @@ namespace eShiftManagementSystem.Forms
 
         private void InitializeComponent()
         {
-            this.BackColor = Color.FromArgb(250, 250, 250);
-            this.Size = new Size(1000, 700);
-
+            lblTitle = new MaterialLabel();
+            SuspendLayout();
+            
             // Title
-            var lblTitle = new MaterialLabel
-            {
-                Text = "Job Management",
-                Location = new Point(20, 20),
-                AutoSize = true,
-                Depth = 0,
-                FontType = MaterialSkinManager.fontType.H4,
-                MouseState = MaterialSkin.MouseState.HOVER
-            };
-            this.Controls.Add(lblTitle);
+            lblTitle.Text = "Job Management";
+            lblTitle.Location = new Point(20, 20);
+            lblTitle.AutoSize = true;
+            lblTitle.Depth = 0;
+            lblTitle.FontType = MaterialSkinManager.fontType.H4;
+            lblTitle.MouseState = MouseState.HOVER;
+            Controls.Add(lblTitle);
 
             CreateJobListCard();
             CreateJobDetailsCard();
+            
+            // 
+            // JobManagementPanel
+            // 
+            BackColor = Color.FromArgb(250, 250, 250);
+            Name = "JobManagementPanel";
+            Size = new Size(1000, 700);
+            Load += JobManagementPanel_Load;
+            ResumeLayout(false);
         }
 
         private void CreateJobListCard()
@@ -357,7 +367,7 @@ namespace eShiftManagementSystem.Forms
         {
             try
             {
-                var jobs = _jobRepository.GetAllJobs();
+                var jobs = _jobService.GetAllJobs();
                 var jobData = jobs.Select(j => new
                 {
                     JobId = j.JobId,
@@ -374,7 +384,7 @@ namespace eShiftManagementSystem.Forms
             }
             catch (Exception ex)
             {
-                MaterialMessageBox.Show($"Error loading jobs: {ex.Message}", "Error", 
+                MaterialMessageBox.Show($"Error loading jobs: {ex.Message}", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -383,18 +393,14 @@ namespace eShiftManagementSystem.Forms
         {
             try
             {
-                var customers = _customerRepository.GetAllCustomers();
-                cmbCustomer.Items.Clear();
-                foreach (var customer in customers)
-                {
-                    cmbCustomer.Items.Add(new { Text = customer.FullName, Value = customer.CustomerId });
-                }
+                var customers = _customerService.GetAllCustomers();
+                cmbCustomer.DataSource = customers.Select(c => new { Text = c.FullName, Value = c.CustomerId }).ToList();
                 cmbCustomer.DisplayMember = "Text";
                 cmbCustomer.ValueMember = "Value";
             }
             catch (Exception ex)
             {
-                MaterialMessageBox.Show($"Error loading customers: {ex.Message}", "Error", 
+                MaterialMessageBox.Show($"Error loading customers: {ex.Message}", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
@@ -403,21 +409,20 @@ namespace eShiftManagementSystem.Forms
         {
             try
             {
-                var allJobs = _jobRepository.GetAllJobs();
+                var allJobs = _jobService.GetAllJobs();
                 var filteredJobs = new List<Job>(allJobs);
 
-                // Apply search filter
                 if (!string.IsNullOrWhiteSpace(txtSearch.Text))
                 {
                     var searchTerm = txtSearch.Text.Trim().ToLower();
-                    filteredJobs = filteredJobs.Where(j => 
-                        j.JobNumber.ToLower().Contains(searchTerm) ||
-                        (j.Customer != null && j.Customer.FullName.ToLower().Contains(searchTerm)) ||
-                        j.PickupCity.ToLower().Contains(searchTerm) ||
-                        j.DestinationCity.ToLower().Contains(searchTerm)).ToList();
+                    filteredJobs = filteredJobs.Where(j =>
+                        (j.JobNumber?.ToLower().Contains(searchTerm) ?? false) ||
+                        (j.Customer?.FullName?.ToLower().Contains(searchTerm) ?? false) ||
+                        (j.PickupCity?.ToLower().Contains(searchTerm) ?? false) ||
+                        (j.DestinationCity?.ToLower().Contains(searchTerm) ?? false)
+                    ).ToList();
                 }
 
-                // Apply status filter
                 if (cmbStatusFilter.SelectedIndex > 0)
                 {
                     var selectedStatus = cmbStatusFilter.SelectedItem.ToString();
@@ -440,7 +445,7 @@ namespace eShiftManagementSystem.Forms
             }
             catch (Exception ex)
             {
-                MaterialMessageBox.Show($"Error searching jobs: {ex.Message}", "Error", 
+                MaterialMessageBox.Show($"Error searching jobs: {ex.Message}", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -460,17 +465,19 @@ namespace eShiftManagementSystem.Forms
                 try
                 {
                     var selectedRow = dgvJobs.SelectedRows[0];
-                    var jobId = Convert.ToInt32(selectedRow.Cells["JobId"].Value);
-                    
-                    _selectedJob = _jobRepository.GetJobById(jobId);
-                    if (_selectedJob != null)
+                    if (selectedRow.DataBoundItem != null)
                     {
-                        PopulateForm(_selectedJob);
+                        var jobId = (int)selectedRow.Cells["JobId"].Value;
+                        _selectedJob = _jobService.GetJobById(jobId);
+                        if (_selectedJob != null)
+                        {
+                            PopulateForm(_selectedJob);
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
-                    MaterialMessageBox.Show($"Error loading job details: {ex.Message}", "Error", 
+                    MaterialMessageBox.Show($"Error loading job details: {ex.Message}", "Error",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
@@ -479,17 +486,8 @@ namespace eShiftManagementSystem.Forms
         private void PopulateForm(Job job)
         {
             txtJobNumber.Text = job.JobNumber;
-            
-            // Set customer
-            for (int i = 0; i < cmbCustomer.Items.Count; i++)
-            {
-                var item = (dynamic)cmbCustomer.Items[i];
-                if (item.Value == job.CustomerId)
-                {
-                    cmbCustomer.SelectedIndex = i;
-                    break;
-                }
-            }
+
+            cmbCustomer.SelectedValue = job.CustomerId;
 
             txtPickupAddress.Text = job.PickupAddress;
             txtPickupCity.Text = job.PickupCity;
@@ -534,15 +532,15 @@ namespace eShiftManagementSystem.Forms
                 _selectedJob.Status = cmbStatus.SelectedItem?.ToString() ?? "pending";
                 _selectedJob.SpecialInstructions = txtSpecialInstructions.Text.Trim();
 
-                _jobRepository.UpdateJob(_selectedJob);
-                MaterialMessageBox.Show("Job updated successfully!", "Success", 
+                _jobService.UpdateJob(_selectedJob);
+                MaterialMessageBox.Show("Job updated successfully!", "Success",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 LoadJobs();
             }
             catch (Exception ex)
             {
-                MaterialMessageBox.Show($"Error saving job: {ex.Message}", "Error", 
+                MaterialMessageBox.Show($"Error saving job: {ex.Message}", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -553,8 +551,8 @@ namespace eShiftManagementSystem.Forms
 
             try
             {
-                _jobRepository.UpdateJobStatus(_selectedJob.JobId, "accepted");
-                MaterialMessageBox.Show("Job approved successfully!", "Success", 
+                _jobService.UpdateJobStatus(_selectedJob.JobId, "accepted");
+                MaterialMessageBox.Show("Job approved successfully!", "Success",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 LoadJobs();
@@ -562,7 +560,7 @@ namespace eShiftManagementSystem.Forms
             }
             catch (Exception ex)
             {
-                MaterialMessageBox.Show($"Error approving job: {ex.Message}", "Error", 
+                MaterialMessageBox.Show($"Error approving job: {ex.Message}", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -571,15 +569,15 @@ namespace eShiftManagementSystem.Forms
         {
             if (_selectedJob == null) return;
 
-            var result = MaterialMessageBox.Show("Are you sure you want to decline this job?", "Confirm Decline", 
+            var result = MaterialMessageBox.Show("Are you sure you want to decline this job?", "Confirm Decline",
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
             if (result == DialogResult.Yes)
             {
                 try
                 {
-                    _jobRepository.UpdateJobStatus(_selectedJob.JobId, "declined");
-                    MaterialMessageBox.Show("Job declined successfully!", "Success", 
+                    _jobService.UpdateJobStatus(_selectedJob.JobId, "declined");
+                    MaterialMessageBox.Show("Job declined successfully!", "Success",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                     LoadJobs();
@@ -587,7 +585,7 @@ namespace eShiftManagementSystem.Forms
                 }
                 catch (Exception ex)
                 {
-                    MaterialMessageBox.Show($"Error declining job: {ex.Message}", "Error", 
+                    MaterialMessageBox.Show($"Error declining job: {ex.Message}", "Error",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
@@ -597,15 +595,15 @@ namespace eShiftManagementSystem.Forms
         {
             if (_selectedJob == null) return;
 
-            var result = MaterialMessageBox.Show($"Are you sure you want to delete job '{_selectedJob.JobNumber}'?", 
+            var result = MaterialMessageBox.Show($"Are you sure you want to delete job '{_selectedJob.JobNumber}'?",
                 "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
             if (result == DialogResult.Yes)
             {
                 try
                 {
-                    _jobRepository.DeleteJob(_selectedJob.JobId);
-                    MaterialMessageBox.Show("Job deleted successfully!", "Success", 
+                    _jobService.DeleteJob(_selectedJob.JobId);
+                    MaterialMessageBox.Show("Job deleted successfully!", "Success",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                     LoadJobs();
@@ -613,7 +611,7 @@ namespace eShiftManagementSystem.Forms
                 }
                 catch (Exception ex)
                 {
-                    MaterialMessageBox.Show($"Error deleting job: {ex.Message}", "Error", 
+                    MaterialMessageBox.Show($"Error deleting job: {ex.Message}", "Error",
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
@@ -622,6 +620,11 @@ namespace eShiftManagementSystem.Forms
         private void btnClear_Click(object sender, EventArgs e)
         {
             ClearForm();
+        }
+
+        private void JobManagementPanel_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

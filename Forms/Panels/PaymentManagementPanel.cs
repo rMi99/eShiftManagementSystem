@@ -8,13 +8,15 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using System.Collections.Generic;
+using eShiftManagementSystem.DataAccess.Repositories;
+using eShiftManagementSystem.Services;
 
 namespace eShiftManagementSystem.Forms.Panels
 {
     public partial class PaymentManagementPanel : UserControl
     {
-        private readonly PaymentService _paymentService = new PaymentService();
-        private readonly JobService _jobService = new JobService();
+        private readonly PaymentService _paymentService;
+        private readonly JobService _jobService;
         private Job _selectedJob;
         private Payment _selectedPayment;
 
@@ -28,6 +30,8 @@ namespace eShiftManagementSystem.Forms.Panels
 
         public PaymentManagementPanel()
         {
+            _paymentService = new PaymentService();
+            _jobService = new JobService(new JobRepository(), new EmailService(Program.Configuration));
             InitializeComponent();
             LoadJobs();
         }
@@ -191,7 +195,6 @@ namespace eShiftManagementSystem.Forms.Panels
                 MaterialMessageBox.Show("Please select a payment to delete.", "Error");
                 return;
             }
-            //var result = MaterialMessageBox.Show("Are you sure you want to delete this payment?", "Confirm Delete", MessageBoxButtons.YesNo);
             var result = MaterialMessageBox.Show(
      "Are you sure you want to delete this payment?",
      "Confirm Delete",

@@ -7,6 +7,9 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Linq;
+using eShiftManagementSystem.Services;
+using eShiftManagementSystem.Business.Interfaces;
+using eShiftManagementSystem.DataAccess.Repositories;
 
 namespace eShiftManagementSystem.Forms
 {
@@ -26,13 +29,13 @@ namespace eShiftManagementSystem.Forms
         public CustomerJobsForm(int customerId)
         {
             _customerId = customerId;
-            _jobService = new JobService();
-            
+            _jobService = new JobService(new JobRepository(), new EmailService(Program.Configuration));
+
             materialSkinManager = MaterialSkinManager.Instance;
             materialSkinManager.AddFormToManage(this);
             materialSkinManager.Theme = MaterialSkinManager.Themes.LIGHT;
             materialSkinManager.ColorScheme = new ColorScheme(Primary.Green600, Primary.Green700, Primary.Green100, Accent.Orange200, TextShade.WHITE);
-            
+
             InitializeComponent();
             LoadJobs();
         }
@@ -141,7 +144,7 @@ namespace eShiftManagementSystem.Forms
             }
             catch (Exception ex)
             {
-                MaterialMessageBox.Show($"Error loading jobs: {ex.Message}", "Error", 
+                MaterialMessageBox.Show($"Error loading jobs: {ex.Message}", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -166,13 +169,13 @@ namespace eShiftManagementSystem.Forms
             {
                 var selectedRow = dgvJobs.SelectedRows[0];
                 var JobNumber = selectedRow.Cells["JobNumber"].Value;
-                
-                MaterialMessageBox.Show($"Job details view will be implemented for Job ID: {JobNumber}", "Information", 
+
+                MaterialMessageBox.Show($"Job details view will be implemented for Job ID: {JobNumber}", "Information",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             else
             {
-                MaterialMessageBox.Show("Please select a job to view details.", "Selection Required", 
+                MaterialMessageBox.Show("Please select a job to view details.", "Selection Required",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }

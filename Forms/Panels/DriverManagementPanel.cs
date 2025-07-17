@@ -9,6 +9,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using System.Linq;
 using System.Collections.Generic;
+using eShiftManagementSystem.Services;
 
 namespace eShiftManagementSystem.Forms
 {
@@ -38,7 +39,7 @@ namespace eShiftManagementSystem.Forms
         public DriverManagementPanel()
         {
             _staffService = new StaffService();
-            _jobService = new JobService();
+            _jobService = new JobService(new JobRepository(), new EmailService(Program.Configuration));
             _vehicleService = new VehicleService();
             InitializeComponent();
             LoadDrivers();
