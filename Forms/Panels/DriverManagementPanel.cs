@@ -179,15 +179,20 @@ namespace eShiftManagementSystem.Forms
             cmbAssignedJob.SelectedIndex = -1;
         }
 
-        private void btnSave_Click(object sender, EventArgs e)
+   private void btnSave_Click(object sender, EventArgs e)
         {
             if (_selectedDriver == null) // Add new driver
             {
-                // In a real application, you would create a new User first, then the Staff
                 MessageBox.Show("Adding new drivers is not fully implemented in this example.");
             }
             else // Update existing driver
             {
+                if (cmbAssignedJob.SelectedValue == null || cmbAssignedVehicle.SelectedValue == null)
+                {
+                    MessageBox.Show("Please assign a job and a vehicle.");
+                    return;
+                }
+
                 _selectedDriver.FirstName = txtFirstName.Text;
                 _selectedDriver.LastName = txtLastName.Text;
                 _selectedDriver.Phone = txtPhone.Text;
@@ -196,16 +201,14 @@ namespace eShiftManagementSystem.Forms
                 // Update Job-Driver-Vehicle assignment
                 var jobId = (int)cmbAssignedJob.SelectedValue;
                 var vehicleId = (int)cmbAssignedVehicle.SelectedValue;
-                _jobService.AssignJobToDriver(jobId, _selectedDriver.StaffId);
-                // You would also have a method to assign a vehicle to a driver
-                // _vehicleService.AssignVehicleToDriver(vehicleId, _selectedDriver.StaffId);
+                var containerId = 1; // Default container ID, ensure this exists in your DB
 
-
-                MessageBox.Show("Driver details updated successfully.");
+                _jobService.AssignJobToDriver(jobId, _selectedDriver.StaffId, vehicleId, containerId);
+                
+                MessageBox.Show("Driver details updated and job assigned successfully.");
                 LoadDrivers();
             }
         }
-
         private void btnDelete_Click(object sender, EventArgs e)
         {
             if (_selectedDriver != null)
