@@ -18,6 +18,7 @@ namespace eShiftManagementSystem.Forms
         private readonly StaffService _staffService;
         private readonly JobService _jobService;
         private readonly VehicleService _vehicleService;
+        private readonly UserRepository _userRepository;
         private Staff _selectedDriver;
 
         // Controls
@@ -31,6 +32,7 @@ namespace eShiftManagementSystem.Forms
         private MaterialTextBox txtFirstName;
         private MaterialTextBox txtLastName;
         private MaterialTextBox txtPhone;
+        private MaterialComboBox cmbPosition; // New control for position
         private MaterialComboBox cmbAssignedVehicle;
         private MaterialComboBox cmbAssignedJob;
         private MaterialButton btnSave;
@@ -41,6 +43,7 @@ namespace eShiftManagementSystem.Forms
             _staffService = new StaffService();
             _jobService = new JobService(new JobRepository(), new EmailService(Program.Configuration));
             _vehicleService = new VehicleService();
+            _userRepository = new UserRepository();
             InitializeComponent();
             LoadDrivers();
             LoadVehicles();
@@ -114,22 +117,30 @@ namespace eShiftManagementSystem.Forms
             txtFirstName = new MaterialTextBox { Hint = "First Name", Location = new Point(20, 60), Size = new Size(310, 50) };
             txtLastName = new MaterialTextBox { Hint = "Last Name", Location = new Point(20, 120), Size = new Size(310, 50) };
             txtPhone = new MaterialTextBox { Hint = "Phone", Location = new Point(20, 180), Size = new Size(310, 50) };
-            cmbAssignedVehicle = new MaterialComboBox { Hint = "Assign Vehicle", Location = new Point(20, 240), Size = new Size(310, 50) };
-            cmbAssignedJob = new MaterialComboBox { Hint = "Assign Job", Location = new Point(20, 300), Size = new Size(310, 50) };
+            
+            // New Position ComboBox
+            cmbPosition = new MaterialComboBox { Hint = "Position", Location = new Point(20, 240), Size = new Size(310, 50) };
+            cmbPosition.Items.AddRange(new object[] { "Lorry Driver", "Assistant", "Operations Manager" });
 
-            btnSave = new MaterialButton { Text = "SAVE", Location = new Point(20, 370), Size = new Size(150, 36) };
-            btnDelete = new MaterialButton { Text = "DELETE", Location = new Point(180, 370), Size = new Size(150, 36), Type = MaterialButton.MaterialButtonType.Outlined };
+            cmbAssignedVehicle = new MaterialComboBox { Hint = "Assign Vehicle", Location = new Point(20, 300), Size = new Size(310, 50) };
+            cmbAssignedJob = new MaterialComboBox { Hint = "Assign Job", Location = new Point(20, 360), Size = new Size(310, 50) };
+
+            btnSave = new MaterialButton { Text = "SAVE", Location = new Point(20, 430), Size = new Size(150, 36) };
+            btnDelete = new MaterialButton { Text = "DELETE", Location = new Point(180, 430), Size = new Size(150, 36), Type = MaterialButton.MaterialButtonType.Outlined };
 
             btnSave.Click += btnSave_Click;
             btnDelete.Click += btnDelete_Click;
 
-            cardDriverDetails.Controls.AddRange(new Control[] { lblDetails, txtFirstName, txtLastName, txtPhone, cmbAssignedVehicle, cmbAssignedJob, btnSave, btnDelete });
+            cardDriverDetails.Controls.AddRange(new Control[] { lblDetails, txtFirstName, txtLastName, txtPhone, cmbPosition, cmbAssignedVehicle, cmbAssignedJob, btnSave, btnDelete });
             this.Controls.Add(cardDriverDetails);
         }
 
         private void LoadDrivers(string searchTerm = null)
         {
-            var drivers = string.IsNullOrEmpty(searchTerm) ? _staffService.GetAllDrivers() : _staffService.GetAllDrivers().Where(d => d.FullName.ToLower().Contains(searchTerm.ToLower())).ToList();
+            var drivers = string.IsNullOrEmpty(searchTerm) 
+                ? _staffService.GetAllDrivers() 
+                : _staffService.GetAllDrivers().Where(d => d.FullName.ToLower().Contains(searchTerm.ToLower())).ToList();
+            
             dgvDrivers.DataSource = drivers.Select(d => new { d.StaffId, d.FullName, d.Phone, d.Position }).ToList();
         }
 
@@ -143,7 +154,7 @@ namespace eShiftManagementSystem.Forms
 
         private void LoadJobs()
         {
-            var jobs = _jobService.GetAllJobs();
+            var jobs = _jobService.GetAllJobs().Where(j => j.Status == "accepted" || j.Status == "in_progress").ToList();
             cmbAssignedJob.DataSource = jobs;
             cmbAssignedJob.DisplayMember = "JobNumber";
             cmbAssignedJob.ValueMember = "JobId";
@@ -166,6 +177,7 @@ namespace eShiftManagementSystem.Forms
                 txtFirstName.Text = _selectedDriver.FirstName;
                 txtLastName.Text = _selectedDriver.LastName;
                 txtPhone.Text = _selectedDriver.Phone;
+                cmbPosition.SelectedItem = _selectedDriver.Position;
             }
         }
 
@@ -175,48 +187,99 @@ namespace eShiftManagementSystem.Forms
             txtFirstName.Clear();
             txtLastName.Clear();
             txtPhone.Clear();
+            cmbPosition.SelectedIndex = -1;
             cmbAssignedVehicle.SelectedIndex = -1;
             cmbAssignedJob.SelectedIndex = -1;
+            dgvDrivers.ClearSelection();
         }
 
-   private void btnSave_Click(object sender, EventArgs e)
+        private void btnSave_Click(object sender, EventArgs e)
         {
-            if (_selectedDriver == null) // Add new driver
+            if (string.IsNullOrWhiteSpace(txtFirstName.Text) ||
+                string.IsNullOrWhiteSpace(txtLastName.Text) ||
+                string.IsNullOrWhiteSpace(txtPhone.Text) ||
+                cmbPosition.SelectedItem == null)
             {
-                MessageBox.Show("Adding new drivers is not fully implemented in this example.");
+                MessageBox.Show("Please fill in all staff details, including position.");
+                return;
             }
-            else // Update existing driver
+
+            try
             {
-                if (cmbAssignedJob.SelectedValue == null || cmbAssignedVehicle.SelectedValue == null)
+                if (_selectedDriver == null) // Add new staff member
                 {
-                    MessageBox.Show("Please assign a job and a vehicle.");
-                    return;
+                    // Create a user account for the new staff
+                    var user = new User
+                    {
+                        Username = $"{txtFirstName.Text.Trim().ToLower()}{txtLastName.Text.Trim().ToLower()}",
+                        Email = $"{txtFirstName.Text.Trim().ToLower()}.{txtLastName.Text.Trim().ToLower()}@eshift.com", // Example email
+                        PasswordHash = PasswordHasher.HashPassword("Staff@123"), // Default password
+                        Role = "driver", // Default role
+                        IsActive = true,
+                        CreatedAt = DateTime.Now
+                    };
+                    int userId = _userRepository.AddUser(user);
+
+                    // Create the new staff member
+                    var newStaff = new Staff
+                    {
+                        UserId = userId,
+                        FirstName = txtFirstName.Text.Trim(),
+                        LastName = txtLastName.Text.Trim(),
+                        Phone = txtPhone.Text.Trim(),
+                        Position = cmbPosition.SelectedItem.ToString(),
+                        HireDate = DateTime.Now
+                    };
+                    _staffService.CreateStaff(newStaff);
+                    
+                    MessageBox.Show("Staff member added successfully. Default password is 'Staff@123'.");
                 }
+                else // Update existing staff member
+                {
+                    _selectedDriver.FirstName = txtFirstName.Text.Trim();
+                    _selectedDriver.LastName = txtLastName.Text.Trim();
+                    _selectedDriver.Phone = txtPhone.Text.Trim();
+                    _selectedDriver.Position = cmbPosition.SelectedItem.ToString();
+                    _staffService.UpdateStaff(_selectedDriver);
 
-                _selectedDriver.FirstName = txtFirstName.Text;
-                _selectedDriver.LastName = txtLastName.Text;
-                _selectedDriver.Phone = txtPhone.Text;
-                _staffService.UpdateStaff(_selectedDriver);
+                    // Optionally, assign job if selected
+                    if (cmbAssignedJob.SelectedValue != null && cmbAssignedVehicle.SelectedValue != null)
+                    {
+                        var jobId = (int)cmbAssignedJob.SelectedValue;
+                        var vehicleId = (int)cmbAssignedVehicle.SelectedValue;
+                        var containerId = 1; // Default container ID, ensure this exists in your DB
 
-                // Update Job-Driver-Vehicle assignment
-                var jobId = (int)cmbAssignedJob.SelectedValue;
-                var vehicleId = (int)cmbAssignedVehicle.SelectedValue;
-                var containerId = 1; // Default container ID, ensure this exists in your DB
-
-                _jobService.AssignJobToDriver(jobId, _selectedDriver.StaffId, vehicleId, containerId);
-                
-                MessageBox.Show("Driver details updated and job assigned successfully.");
+                        _jobService.AssignJobToDriver(jobId, _selectedDriver.StaffId, vehicleId, containerId);
+                        MessageBox.Show("Driver details updated and job assigned successfully.");
+                    }
+                    else
+                    {
+                        MessageBox.Show("Driver details updated successfully.");
+                    }
+                }
                 LoadDrivers();
+                ClearForm();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred: {ex.Message}");
             }
         }
+        
         private void btnDelete_Click(object sender, EventArgs e)
         {
             if (_selectedDriver != null)
             {
-                _staffService.DeleteStaff(_selectedDriver.StaffId);
-                MessageBox.Show("Driver deleted successfully.");
-                LoadDrivers();
-                ClearForm();
+                var result = MessageBox.Show("Are you sure you want to delete this driver?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                if (result == DialogResult.Yes)
+                {
+                    // You might also want to delete the associated User account
+                    // For now, we only delete the staff record
+                    _staffService.DeleteStaff(_selectedDriver.StaffId);
+                    MessageBox.Show("Driver deleted successfully.");
+                    LoadDrivers();
+                    ClearForm();
+                }
             }
         }
     }
