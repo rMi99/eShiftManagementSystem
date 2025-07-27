@@ -47,7 +47,7 @@ namespace eShiftManagementSystem.DataAccess.Repositories
             using (var connection = DatabaseConnection.GetConnection())
             {
                 connection.Open();
-                string query = "INSERT INTO transport_prices (from_weight, to_weight, price) VALUES (@fromWeight, @toWeight, @price)";
+                string query = "INSERT INTO price_ranges (from_weight, to_weight, price) VALUES (@fromWeight, @toWeight, @price)";
                 using (var command = new MySqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@fromWeight", priceRange.FromWeight);
@@ -63,7 +63,7 @@ namespace eShiftManagementSystem.DataAccess.Repositories
             using (var connection = DatabaseConnection.GetConnection())
             {
                 connection.Open();
-                string query = "UPDATE transport_prices SET from_weight = @fromWeight, to_weight = @toWeight, price = @price WHERE id = @id";
+                string query = "UPDATE price_ranges SET from_weight = @fromWeight, to_weight = @toWeight, price = @price WHERE id = @id";
                 using (var command = new MySqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@fromWeight", priceRange.FromWeight);
@@ -80,7 +80,7 @@ namespace eShiftManagementSystem.DataAccess.Repositories
             using (var connection = DatabaseConnection.GetConnection())
             {
                 connection.Open();
-                string query = "DELETE FROM transport_prices WHERE id = @id";
+                string query = "DELETE FROM price_ranges WHERE id = @id";
                 using (var command = new MySqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@id", id);
